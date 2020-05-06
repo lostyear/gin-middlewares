@@ -15,7 +15,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type routineHandlerFunc func(*gin.Context, chan struct{})
+
+func TimeoutHandler(timeout time.Duration, timeoutMsg string, handler gin.HandlerFunc) gin.HandlerFunc {
+	handlerRoutine := func(c *gin.Context, done chan struct{}) {
+		gin.Recovery()
+		handler(c)
+		close(done)
+	}
+	return timeoutHandlerFunc(timeout, timeoutMsg, handlerRoutine)
+}
+
 func TimeoutMiddleware(timeout time.Duration, timeoutMsg string) gin.HandlerFunc {
+	handlerRoutine := func(c *gin.Context, done chan struct{}) {
+		gin.Recovery()
+		c.Next()
+		close(done)
+	}
+	return timeoutHandlerFunc(timeout, timeoutMsg, handlerRoutine)
+}
+
+func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routineHandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		ctx, cancelCtx := context.WithTimeout(ctx, timeout)
@@ -32,11 +52,7 @@ func TimeoutMiddleware(timeout time.Duration, timeoutMsg string) gin.HandlerFunc
 		}
 		c.Writer = tw
 
-		go func() {
-			gin.Recovery()(c)
-			c.Next()
-			close(done)
-		}()
+		go handler(c, done)
 
 		select {
 		case <-done:
