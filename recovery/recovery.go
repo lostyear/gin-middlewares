@@ -55,6 +55,7 @@ func RecoveryWithWriter(out io.Writer) gin.HandlerFunc {
 						},
 					)
 					c.Abort()
+					return
 				}
 				// Check for a broken connection, as it is not really a
 				// condition that warrants a panic stack trace.
