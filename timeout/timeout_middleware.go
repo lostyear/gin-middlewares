@@ -72,7 +72,7 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routin
 		case <-ctx.Done():
 			tw.mu.Lock()
 			defer tw.mu.Unlock()
-			w.WriteHeader(http.StatusServiceUnavailable)
+			w.WriteHeader(http.StatusGatewayTimeout)
 			w.WriteString(timeoutMsg)
 			tw.timedOut = true
 		}
