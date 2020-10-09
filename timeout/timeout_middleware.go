@@ -13,13 +13,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lostyear/gin-middlewares/recovery"
 )
 
 type routineHandlerFunc func(*gin.Context, chan struct{})
 
 func TimeoutHandler(timeout time.Duration, timeoutMsg string, handler gin.HandlerFunc) gin.HandlerFunc {
 	handlerRoutine := func(c *gin.Context, done chan struct{}) {
-		gin.Recovery()
+		recovery.Recovery()(c)
 		handler(c)
 		close(done)
 	}
@@ -28,7 +29,7 @@ func TimeoutHandler(timeout time.Duration, timeoutMsg string, handler gin.Handle
 
 func TimeoutMiddleware(timeout time.Duration, timeoutMsg string) gin.HandlerFunc {
 	handlerRoutine := func(c *gin.Context, done chan struct{}) {
-		gin.Recovery()
+		recovery.Recovery()(c)
 		c.Next()
 		close(done)
 	}
