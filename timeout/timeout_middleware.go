@@ -38,6 +38,11 @@ func TimeoutMiddleware(timeout time.Duration, timeoutMsg string) gin.HandlerFunc
 
 func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routineHandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// if gin framework already run serverError, this is no need
+		if c.Writer.Status() != 200 {
+			return
+		}
+
 		ctx := c.Request.Context()
 		ctx, cancelCtx := context.WithTimeout(ctx, timeout)
 		defer cancelCtx()
@@ -66,7 +71,11 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routin
 			}
 
 			if !tw.wroteHeader {
-				tw.code = http.StatusOK
+				if w.Status() > 0 {
+					tw.code = w.Status()
+				} else {
+					tw.code = http.StatusOK
+				}
 			}
 			w.WriteHeader(tw.code)
 			w.Write(tw.wbuf.Bytes())
